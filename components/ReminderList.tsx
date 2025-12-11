@@ -7,7 +7,7 @@ import ReminderTabs from "./ReminderTabs";
 import { userUIStore } from "@/store/ui.store";
 
 export default function ReminderList() {
-    const { filter } = userUIStore();
+    const { filter, setFilter } = userUIStore();
     const { data: reminders, isLoading, isError } = useGetReminders();
 
     if (isLoading) {
@@ -35,11 +35,25 @@ export default function ReminderList() {
     }
 
     //filter reminders based on selected filter
-    const filteredReminders = reminders.filter((reminder) => {
+    const filteredReminders = reminders?.filter((reminder) => {
         if (filter === "all") return true;
         if (filter === "pending") return reminder.status === "PENDING";
         if (filter === "completed") return reminder.status === "COMPLETED";
-    })
+        return true;
+    }) || [];
+
+    if (filteredReminders.length === 0) {
+        return (
+            <div className="space-y-4">
+                <div>
+                    <ReminderTabs />
+                </div>
+                <div className="text-center py-8 text-gray-500">
+                    <p>No reminders for {filter === "all" ? "this view" : filter}. Create one to get started!</p>
+                </div>
+            </div>
+        );
+    }
 
     const getStatusIcon = (status: string) => {
         if (status === "COMPLETED") {
