@@ -3,8 +3,11 @@
 import { useGetReminders } from "@/hooks/UseReminderHook";
 import { formatDistanceToNow, format } from "date-fns";
 import { Clock, CheckCircle, AlertCircle } from "lucide-react";
+import ReminderTabs from "./ReminderTabs";
+import { userUIStore } from "@/store/ui.store";
 
 export default function ReminderList() {
+    const { filter } = userUIStore();
     const { data: reminders, isLoading, isError } = useGetReminders();
 
     if (isLoading) {
@@ -31,6 +34,13 @@ export default function ReminderList() {
         );
     }
 
+    //filter reminders based on selected filter
+    const filteredReminders = reminders.filter((reminder) => {
+        if (filter === "all") return true;
+        if (filter === "pending") return reminder.status === "PENDING";
+        if (filter === "completed") return reminder.status === "COMPLETED";
+    })
+
     const getStatusIcon = (status: string) => {
         if (status === "COMPLETED") {
             return <CheckCircle className="w-5 h-5 text-green-500" />;
@@ -46,10 +56,12 @@ export default function ReminderList() {
 
     return (
         <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">My Reminders</h2>
+            <div>
+                <ReminderTabs />
+            </div>
             
             <div className="grid gap-4">
-                {reminders.map((reminder) => {
+                {filteredReminders.map((reminder) => {
                     // Database returns UTC, convert to IST for display
                     const reminderDate = new Date(reminder.remindAt);
                     const istDate = new Date(reminderDate.getTime() - (5.5 * 60 * 60 * 1000));
