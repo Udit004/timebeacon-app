@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 type UIState = {
-    filter: "all" | "upcoming" | "completed";
+    filter: "all" | "pending" | "completed";
     selFilter: (f: UIState["filter"]) => void;
     isModalOpen: boolean;
     openModal: () => void;
@@ -9,7 +9,7 @@ type UIState = {
 };
 
 export const userUIStore = create<UIState>((set) => ({
-    filter: "all",
+    filter: "pending",
     selFilter: (f) => set({ filter: f }),
     isModalOpen: false,
     openModal: () => set({ isModalOpen: true}),
