@@ -55,3 +55,23 @@ export async function PUT (req: Request, { params }:{ params : { id: string }}) 
         );
     }
 }
+
+
+export async function DELETE (req: Request, { params }: { params: { id: string}}) {
+    try {
+        const { id } = await params;
+        const deleteReminder = await prisma.reminder.delete({
+            where: { id },
+        });
+        console.log("Reminder deleted successfully:", deleteReminder);
+        return NextResponse.json({
+            message: "Reminder deleted successfully"
+        })
+    } catch (error) {
+        console.error("Error deleting reminder:", error);
+        return NextResponse.json(
+            { error: "Internal Server Error" },
+            { status: 500 }
+        );
+    }
+}

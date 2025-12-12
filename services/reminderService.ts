@@ -45,4 +45,23 @@ const getAllReminders = async (): Promise<ReminderType[]> => {
     }
 }
 
-export { createReminderService, getAllReminders };
+
+
+
+
+const deleteReminderService = async (id: string): Promise<void> => {
+    try {
+        await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/reminder/${id}`, {
+            method: "DELETE",
+            headers: {
+                "content-type": "application/json",
+            },
+        });
+    } catch (error) {
+        console.error("Error deleting reminder:", error);
+        throw error;
+    }
+}
+
+
+export { createReminderService, getAllReminders, deleteReminderService };
