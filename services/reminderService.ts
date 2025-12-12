@@ -46,7 +46,26 @@ const getAllReminders = async (): Promise<ReminderType[]> => {
 }
 
 
+const updateReminderService = async (id: string, updateData: Partial<CreateReminderInput>): Promise<ReminderType> => {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/reminder/${id}`, {
+            method: "PUT",
+            headers: {
+                "content-type": "application/json",
+            },
+            body: JSON.stringify(updateData),
+        });
+        if(!response.ok) {
+            throw new Error("Failed to update reminder");
+        }
 
+        const data: ReminderType = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error updating reminder:", error);
+        throw error;
+    }
+};
 
 
 const deleteReminderService = async (id: string): Promise<void> => {
@@ -64,4 +83,4 @@ const deleteReminderService = async (id: string): Promise<void> => {
 }
 
 
-export { createReminderService, getAllReminders, deleteReminderService };
+export { createReminderService, getAllReminders, updateReminderService, deleteReminderService };

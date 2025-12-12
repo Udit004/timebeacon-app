@@ -2,7 +2,7 @@ import React from "react";
 import { userUIStore } from "@/store/ui.store";
 
 export default function ReminderTabs({}) {
-  const { filter, selFilter } = userUIStore();
+  const { filter, setFilter } = userUIStore();
 
   const tabs = [
     { id: "all", label: "All" },
@@ -17,7 +17,7 @@ export default function ReminderTabs({}) {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => selFilter(tab.id)}
+            onClick={() => setFilter(tab.id)}
             className={`flex-1 px-4 py-2 rounded-2xl border cursor-pointer transition-all ${
               filter === tab.id
                 ? "bg-linear-to-r from-yellow-500 via-amber-500 to-orange-500 border-orange-500"

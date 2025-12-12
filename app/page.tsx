@@ -7,9 +7,12 @@ import AddReminderForm from "@/components/AddReminderForm"
 import { userUIStore } from '@/store/ui.store'
 
 
-
 function page(): React.ReactNode {
-  const { isModalOpen, closeModal, openModal } = userUIStore();
+  // ✅ Properly subscribe to store
+  const isModalOpen = userUIStore((state) => state.isModalOpen);
+  const closeModal = userUIStore((state) => state.closeModal);
+  const openModal = userUIStore((state) => state.openModal);
+  const selectedReminder = userUIStore((state) => state.selectedReminder);  // ✅ Get selectedReminder
 
   const handleModalToggle = () => {
     if (isModalOpen) {
@@ -31,7 +34,8 @@ function page(): React.ReactNode {
           Create Reminder
         </button>
       </div>
-      {(isModalOpen) && <AddReminderForm />}
+      {/* ✅ Pass selectedReminder to form */}
+      {(isModalOpen) && <AddReminderForm reminder={selectedReminder} />}
       <ReminderList />
     </div>
   )

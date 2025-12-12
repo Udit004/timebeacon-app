@@ -5,9 +5,11 @@ import { formatDistanceToNow, format } from "date-fns";
 import { Clock, CheckCircle, AlertCircle } from "lucide-react";
 import ReminderTabs from "./ReminderTabs";
 import { userUIStore } from "@/store/ui.store";
+import { ReminderType } from "@/types/reminderType";
 
 export default function ReminderList() {
     const { filter } = userUIStore();
+    const { openModal, setSelectedReminder } = userUIStore();  // ➕ Add this
     const { data: reminders, isLoading, isError } = useGetReminders();
     const { mutate: deleteReminder } = useDeleteReminder();
 
@@ -73,6 +75,12 @@ export default function ReminderList() {
         deleteReminder(id);
     };
 
+    // ➕ Add this function
+    const handleUpdate = (reminder: ReminderType) => {
+        setSelectedReminder(reminder);  // Store mein reminder save karo
+        openModal();                     // Modal open karo
+    };
+
     return (
         <div className="space-y-4">
             <div>
@@ -132,13 +140,19 @@ export default function ReminderList() {
                                 Created {formatDistanceToNow(new Date(reminder.createdAt), { addSuffix: true })}
                             </div>
                             <div className="flex gap-4 items-center">
-                                {/* delete and update buttons will go here */}
-                                <button className="bg-linear-to-br from-blue-100 via-blue-200 to-blue-300 p-2 rounded-lg border border-bg-blue-300 hover:bg-blue-400 hover:scale-105 transition-transform duration-200 cursor-pointer">
+                                {/* ✏️ Update Button - Now Connected */}
+                                <button 
+                                    onClick={() => handleUpdate(reminder)}  // ➕ Pass reminder
+                                    className="bg-linear-to-br from-blue-100 via-blue-200 to-blue-300 p-2 rounded-lg border border-bg-blue-300 hover:bg-blue-400 hover:scale-105 transition-transform duration-200 cursor-pointer"
+                                >
                                     <span className="text-blue-500">Update</span>
                                 </button>
+                                
+                                {/* Delete Button */}
                                 <button
-                                onClick={() => handleDelete(reminder.id)}
-                                 className="bg-linear-to-br from-red-100 via-red-200 to-red-300 p-2 rounded-lg border border-bg-red-300 hover:bg-red-400 hover:scale-105 transition-transform duration-200 cursor-pointer">
+                                    onClick={() => handleDelete(reminder.id)}
+                                    className="bg-linear-to-br from-red-100 via-red-200 to-red-300 p-2 rounded-lg border border-bg-red-300 hover:bg-red-400 hover:scale-105 transition-transform duration-200 cursor-pointer"
+                                >
                                     <span className="text-red-700">Delete</span>    
                                 </button>
                             </div>

@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useCreateReminder } from "@/hooks/UseReminderHook";
-import type { CreateReminderInput } from "@/types/reminderType";
+import { useState, useEffect } from "react";
+import { useCreateReminder, useUpdateReminder } from "@/hooks/UseReminderHook";
+import type { CreateReminderInput, ReminderType } from "@/types/reminderType";
 import { userUIStore } from "@/store/ui.store";
 
-export default function AddReminderForm() {
+interface AddReminderFormProps {
+    reminder?: ReminderType; // Optional - agar pass ho to EDIT mode
+}
+
+export default function AddReminderForm({ reminder }: AddReminderFormProps) {
     const [formData, setFormData] = useState<CreateReminderInput>({
         title: "",
         body: "",
@@ -13,8 +17,31 @@ export default function AddReminderForm() {
     });
 
     const [successMessage, setSuccessMessage] = useState("");
-    const { mutate, isPending, isError, error } = useCreateReminder();
+    const createMutation = useCreateReminder();
+    const updateMutation = useUpdateReminder();
     const { closeModal } = userUIStore();
+
+    // EDIT mode - reminder data se fields fill karo
+    useEffect(() => {
+        if (reminder) {
+            // Server se UTC aaya hoga, user ko IST mein dikhana hai
+            // Convert UTC to IST format (datetime-local expects YYYY-MM-DDTHH:mm)
+            const istDate = new Date(reminder.remindAt).toLocaleString('en-CA', {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).replace(' ', 'T');
+
+            setFormData({
+                title: reminder.title,
+                body: reminder.body,
+                remindAt: istDate
+            });
+        }
+    }, [reminder]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -32,14 +59,9 @@ export default function AddReminderForm() {
             return;
         }
         
-        // Input: "2025-12-10T21:51" (user wants this time in IST)
-        // Force IST interpretation by appending IST offset manually
-        
-        // Create Date treating input as UTC first
-        const dateString = formData.remindAt + ":00+05:30"; // Add IST offset
+        // IST ko UTC mein convert karo
+        const dateString = formData.remindAt + ":00+05:30";
         const istDate = new Date(dateString);
-        
-        // Now convert to UTC
         const utcDateTime = istDate.toISOString();
         
         const dataToSend: CreateReminderInput = {
@@ -48,19 +70,45 @@ export default function AddReminderForm() {
         };
 
         console.log("User Input (IST):", formData.remindAt);
-        console.log("With IST offset:", dateString);
-        console.log("Parsed Date:", istDate.toString());
         console.log("Converted to UTC:", utcDateTime);
-        console.log("Verification IST:", new Date(utcDateTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
 
-        mutate(dataToSend, {
-            onSuccess: () => {
-                setFormData({ title: "", body: "", remindAt: "" });
-                setSuccessMessage("✅ Reminder added successfully!");
-                setTimeout(() => setSuccessMessage(""), 3000);
-            }
-        });
+        // CREATE mode
+        if (!reminder) {
+            createMutation.mutate(dataToSend, {
+                onSuccess: () => {
+                    setFormData({ title: "", body: "", remindAt: "" });
+                    setSuccessMessage("✅ Reminder added successfully!");
+                    setTimeout(() => {
+                        setSuccessMessage("");
+                        closeModal();
+                    }, 2000);
+                }
+            });
+        }
+        // UPDATE mode
+        else {
+            updateMutation.mutate(
+                {
+                    id: reminder.id,
+                    updateData: dataToSend
+                },
+                {
+                    onSuccess: () => {
+                        setSuccessMessage("✅ Reminder updated successfully!");
+                        setTimeout(() => {
+                            setSuccessMessage("");
+                            closeModal();
+                        }, 2000);
+                    }
+                }
+            );
+        }
     };
+
+    // Kaunsa loading state use karein
+    const isPending = createMutation.isPending || updateMutation.isPending;
+    const isError = createMutation.isError || updateMutation.isError;
+    const error = createMutation.error || updateMutation.error;
 
     return (
         <>
@@ -80,6 +128,11 @@ export default function AddReminderForm() {
                     >
                         <span className="bg-amber-600 p-2 rounded-2xl border border-amber-700">✕</span>
                     </button>
+
+                    {/* Heading - Dynamic based on mode */}
+                    <h2 className="text-xl font-bold mb-4">
+                        {reminder ? "✏️ Edit Reminder" : "➕ Add Reminder"}
+                    </h2>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
@@ -133,16 +186,21 @@ export default function AddReminderForm() {
 
                         {isError && (
                             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
-                                ❌ {error?.message || "Error creating reminder"}
+                                ❌ {error?.message || "Error processing reminder"}
                             </div>
                         )}
 
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="w-full bg-amber-500 text-white py-2 rounded-lg border border-amber-600 hover:bg-amber-700   disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+                            className="w-full bg-amber-500 text-white py-2 rounded-lg border border-amber-600 hover:bg-amber-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
                         >
-                            {isPending ? "Adding..." : "Add Reminder"}
+                            {isPending 
+                                ? "Processing..." 
+                                : reminder 
+                                    ? "Update Reminder ✏️" 
+                                    : "Add Reminder ➕"
+                            }
                         </button>
                     </form>
                 </div>
