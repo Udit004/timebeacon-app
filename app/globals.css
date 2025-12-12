@@ -21,10 +21,60 @@
 }
 
 body {
-  background: var(--background);
+  background: 
+    radial-gradient(ellipse at 50% 100%, rgba(251, 146, 60, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 95%, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
+    linear-gradient(180deg, 
+      #0a0a0a 0%,
+      #0f0b0a 25%,
+      #1a1210 50%,
+      #2d1810 75%,
+      #4a2818 100%
+    );
+  background-attachment: fixed;
+  background-size: 100% 100%;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  position: relative;
+  overflow-x: hidden;
+  min-height: 100vh;
 }
+
+/* Subtle grain texture - Lovable AI style */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.15;
+  mix-blend-mode: overlay;
+  z-index: 1;
+}
+
+/* Subtle warm glow at horizon */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: 
+    radial-gradient(ellipse at 50% 100%, rgba(251, 146, 60, 0.06) 0%, transparent 50%);
+  opacity: 1;
+  z-index: 2;
+  animation: earlylight 30s ease-in-out infinite;
+}
+
+@keyframes earlylight {
+  0%, 100% {
+    background: radial-gradient(ellipse at 50% 100%, rgba(251, 146, 60, 0.06) 0%, transparent 50%);
+  }
+  50% {
+    background: radial-gradient(ellipse at 50% 100%, rgba(251, 146, 60, 0.1) 0%, transparent 55%);
+  }
+}
+
+
 
 @keyframes slide-in {
   from {

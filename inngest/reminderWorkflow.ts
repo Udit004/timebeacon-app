@@ -25,9 +25,10 @@ export const reminderWorkflow = inngest.createFunction(
       // Send notification that reminder is scheduled
       await pusherServer.trigger("reminders", "reminder-scheduled", {
         reminderId: id,
-        message: `Reminder scheduled for ${new Date(reminderTime).toLocaleString("en-IN", {
-          timeZone: "Asia/Kolkata",
-        })}`,
+        message: `Reminder scheduled for ${new Date(reminderTime).toLocaleString(
+          "en-IN",
+          { timeZone: "Asia/Kolkata" }
+        )}`,
         timestamp: new Date().toISOString(),
       });
 
@@ -41,7 +42,7 @@ export const reminderWorkflow = inngest.createFunction(
 
       console.log(`✅ Reminder ${id} is due! Marking as COMPLETED...`);
 
-      // Call API to mark as completed
+      // ✅ Call API to mark as completed
       const response = await fetch(
         `${process.env.APP_URL}/api/reminder/${id}`,
         {
@@ -55,6 +56,29 @@ export const reminderWorkflow = inngest.createFunction(
         }
       );
 
+      // ✅ Handle 404 gracefully (reminder was deleted)
+      if (response.status === 404) {
+        console.log(
+          `⏭️ Reminder ${id} not found (likely deleted). Skipping execution...`
+        );
+
+        // Send notification that reminder was deleted
+        await pusherServer.trigger("reminders", "reminder-skipped", {
+          reminderId: id,
+          message: "Reminder was deleted before execution",
+          reason: "DELETED",
+          timestamp: new Date().toISOString(),
+        });
+
+        // ✅ Return gracefully - NO ERROR, NO RETRY
+        return {
+          skipped: true,
+          reminderId: id,
+          reason: "reminder_deleted",
+        };
+      }
+
+      // ✅ Handle other errors
       if (!response.ok) {
         throw new Error(`Failed to update reminder: ${response.statusText}`);
       }
@@ -70,7 +94,7 @@ export const reminderWorkflow = inngest.createFunction(
       return { success: true, reminderId: id };
     } catch (error) {
       console.error(`❌ Error processing reminder ${id}:`, error);
-      
+
       // Send error notification
       await pusherServer.trigger("reminders", "reminder-error", {
         reminderId: id,

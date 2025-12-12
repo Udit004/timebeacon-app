@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useCreateReminder, useUpdateReminder } from "@/hooks/UseReminderHook";
 import type { CreateReminderInput, ReminderType } from "@/types/reminderType";
 import { userUIStore } from "@/store/ui.store";
@@ -10,19 +10,7 @@ interface AddReminderFormProps {
 }
 
 export default function AddReminderForm({ reminder }: AddReminderFormProps) {
-    const [formData, setFormData] = useState<CreateReminderInput>({
-        title: "",
-        body: "",
-        remindAt: ""
-    });
-
-    const [successMessage, setSuccessMessage] = useState("");
-    const createMutation = useCreateReminder();
-    const updateMutation = useUpdateReminder();
-    const { closeModal } = userUIStore();
-
-    // EDIT mode - reminder data se fields fill karo
-    useEffect(() => {
+    const [formData, setFormData] = useState<CreateReminderInput>(() => {
         if (reminder) {
             // Server se UTC aaya hoga, user ko IST mein dikhana hai
             // Convert UTC to IST format (datetime-local expects YYYY-MM-DDTHH:mm)
@@ -35,13 +23,23 @@ export default function AddReminderForm({ reminder }: AddReminderFormProps) {
                 minute: '2-digit'
             }).replace(' ', 'T');
 
-            setFormData({
+            return {
                 title: reminder.title,
                 body: reminder.body,
                 remindAt: istDate
-            });
+            };
         }
-    }, [reminder]);
+        return {
+            title: "",
+            body: "",
+            remindAt: ""
+        };
+    });
+
+    const [successMessage, setSuccessMessage] = useState("");
+    const createMutation = useCreateReminder();
+    const updateMutation = useUpdateReminder();
+    const { closeModal } = userUIStore();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
