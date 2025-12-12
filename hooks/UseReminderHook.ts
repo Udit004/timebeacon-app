@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createReminderService, getAllReminders } from "@/services/reminderService";
+import { createReminderService, deleteReminderService, getAllReminders } from "@/services/reminderService";
 import type { ReminderType, CreateReminderInput } from "@/types/reminderType";
 import { Reminder } from "@prisma/client";
+import { queryKeys } from "inngest";
 
 //* hook to fetch all reminders 
 export const useGetReminders = () => {
@@ -36,3 +37,31 @@ export const useCreateReminder = () => {
         },
     });
 };
+
+
+
+
+
+
+//* hook to delete a reminder by id
+
+export const useDeleteReminder = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: deleteReminderService,
+        onSuccess: (_, id: string) => {
+            queryClient.setQueryData(
+                ["reminders"],
+                (oldData: ReminderType[] | undefined) => {
+                    return oldData ? oldData.filter((reminder) => reminder.id !== id) : [];
+                }
+            )
+            queryClient.invalidateQueries({ queryKey: ["reminders"] });
+        },
+
+        onError: (error) => {
+            console.error("Error in useDeleteReminder mutation:", error);
+        }
+    })
+}

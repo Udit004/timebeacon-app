@@ -1,14 +1,15 @@
 "use client";
 
-import { useGetReminders } from "@/hooks/UseReminderHook";
+import { useDeleteReminder, useGetReminders } from "@/hooks/UseReminderHook";
 import { formatDistanceToNow, format } from "date-fns";
 import { Clock, CheckCircle, AlertCircle } from "lucide-react";
 import ReminderTabs from "./ReminderTabs";
 import { userUIStore } from "@/store/ui.store";
 
 export default function ReminderList() {
-    const { filter, setFilter } = userUIStore();
+    const { filter } = userUIStore();
     const { data: reminders, isLoading, isError } = useGetReminders();
+    const { mutate: deleteReminder } = useDeleteReminder();
 
     if (isLoading) {
         return (
@@ -68,6 +69,10 @@ export default function ReminderList() {
             : "bg-yellow-100 text-yellow-800";
     };
 
+    const handleDelete = (id: string) => {
+        deleteReminder(id);
+    };
+
     return (
         <div className="space-y-4">
             <div>
@@ -78,7 +83,7 @@ export default function ReminderList() {
                 {filteredReminders.map((reminder) => {
                     // Database returns UTC, convert to IST for display
                     const reminderDate = new Date(reminder.remindAt);
-                    const istDate = new Date(reminderDate.getTime() - (5.5 * 60 * 60 * 1000));
+                    const istDate = new Date(reminderDate.getTime());
                     
                     return (
                         <div
@@ -120,10 +125,25 @@ export default function ReminderList() {
                                 {formatDistanceToNow(reminderDate, { addSuffix: true })}
                             </div>
 
-                            {/* Created At */}
+
+                            <div className="flex justify-between items-center">
+                                {/* Created At */}
                             <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400">
                                 Created {formatDistanceToNow(new Date(reminder.createdAt), { addSuffix: true })}
                             </div>
+                            <div className="flex gap-4 items-center">
+                                {/* delete and update buttons will go here */}
+                                <button className="bg-linear-to-br from-blue-100 via-blue-200 to-blue-300 p-2 rounded-lg border border-bg-blue-300 hover:bg-blue-400 hover:scale-105 transition-transform duration-200 cursor-pointer">
+                                    <span className="text-blue-500">Update</span>
+                                </button>
+                                <button
+                                onClick={() => handleDelete(reminder.id)}
+                                 className="bg-linear-to-br from-red-100 via-red-200 to-red-300 p-2 rounded-lg border border-bg-red-300 hover:bg-red-400 hover:scale-105 transition-transform duration-200 cursor-pointer">
+                                    <span className="text-red-700">Delete</span>    
+                                </button>
+                            </div>
+                            </div>
+                            
                         </div>
                     );
                 })}
