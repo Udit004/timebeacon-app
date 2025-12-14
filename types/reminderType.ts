@@ -5,7 +5,7 @@ export type ReminderType = {
     title: string;
     body: string;
     remindAt: string;
-    status: "pending" | "completed" | "canceled";
+    status: "PENDING" | "COMPLETED" | "CANCELLED";
     createdAt: string;
     updatedAt: string;
 };

@@ -6,6 +6,8 @@ export default function NoiseLayer() {
   useEffect(() => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
+    
+    if (!ctx) return;
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -21,8 +23,8 @@ export default function NoiseLayer() {
 
     document.body.appendChild(canvas);
 
-    function drawNoise() {
-      const imageData = ctx.createImageData(canvas.width, canvas.height);
+    function drawNoise(context: CanvasRenderingContext2D) {
+      const imageData = context.createImageData(canvas.width, canvas.height);
       const buffer = imageData.data;
 
       for (let i = 0; i < buffer.length; i += 4) {
@@ -33,10 +35,10 @@ export default function NoiseLayer() {
         buffer[i + 3] = 255;
       }
 
-      ctx.putImageData(imageData, 0, 0);
+      context.putImageData(imageData, 0, 0);
     }
 
-    drawNoise();
+    drawNoise(ctx);
 
     // Cleanup on hot reload
     return () => {
