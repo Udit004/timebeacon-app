@@ -42,32 +42,37 @@ export const reminderWorkflow = inngest.createFunction(
 
       console.log(`✅ Reminder ${id} is due! Marking as COMPLETED...`);
 
-      // ✅ Call API to mark as completed
-      // Use Vercel URL in production, localhost in development
-      const baseUrl = process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL}` 
-        : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      // ✅ Update reminder directly in database (avoid API call issues in production)
+      const { prisma } = await import("@/lib/prisma");
       
-      const response = await fetch(
-        `${baseUrl}/api/reminder/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            status: "COMPLETED",
-          }),
+      const reminder = await step.run("update-reminder-status", async () => {
+        try {
+          // Check if reminder exists
+          const existingReminder = await prisma.reminder.findUnique({
+            where: { id },
+          });
+
+          // Handle deleted reminder
+          if (!existingReminder) {
+            console.log(
+              `⏭️ Reminder ${id} not found (likely deleted). Skipping execution...`
+            );
+            return null;
+          }
+
+          // Update status
+          return await prisma.reminder.update({
+            where: { id },
+            data: { status: "COMPLETED" },
+          });
+        } catch (error) {
+          console.error(`❌ Error updating reminder ${id}:`, error);
+          throw error;
         }
-      );
+      });
 
-      // ✅ Handle 404 gracefully (reminder was deleted)
-      if (response.status === 404) {
-        console.log(
-          `⏭️ Reminder ${id} not found (likely deleted). Skipping execution...`
-        );
-
-        // Send notification that reminder was deleted
+      // Handle deleted reminder
+      if (!reminder) {
         await pusherServer.trigger("reminders", "reminder-skipped", {
           reminderId: id,
           message: "Reminder was deleted before execution",
@@ -75,17 +80,11 @@ export const reminderWorkflow = inngest.createFunction(
           timestamp: new Date().toISOString(),
         });
 
-        // ✅ Return gracefully - NO ERROR, NO RETRY
         return {
           skipped: true,
           reminderId: id,
           reason: "reminder_deleted",
         };
-      }
-
-      // ✅ Handle other errors
-      if (!response.ok) {
-        throw new Error(`Failed to update reminder: ${response.statusText}`);
       }
 
       // Send notification that reminder is completed
