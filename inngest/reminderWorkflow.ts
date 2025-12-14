@@ -1,5 +1,6 @@
 import { inngest } from "@/lib/inngest";
 import { pusherServer } from "@/lib/pusher";
+import { prisma } from "@/lib/prisma"; // Import at top, not inside function
 
 export const reminderWorkflow = inngest.createFunction(
   { id: "reminder-workflow" },
@@ -42,33 +43,26 @@ export const reminderWorkflow = inngest.createFunction(
 
       console.log(`✅ Reminder ${id} is due! Marking as COMPLETED...`);
 
-      // ✅ Update reminder directly in database (avoid API call issues in production)
-      const { prisma } = await import("@/lib/prisma");
-      
+      // ✅ Update reminder directly in database
       const reminder = await step.run("update-reminder-status", async () => {
-        try {
-          // Check if reminder exists
-          const existingReminder = await prisma.reminder.findUnique({
-            where: { id },
-          });
+        // Check if reminder exists
+        const existingReminder = await prisma.reminder.findUnique({
+          where: { id },
+        });
 
-          // Handle deleted reminder
-          if (!existingReminder) {
-            console.log(
-              `⏭️ Reminder ${id} not found (likely deleted). Skipping execution...`
-            );
-            return null;
-          }
-
-          // Update status
-          return await prisma.reminder.update({
-            where: { id },
-            data: { status: "COMPLETED" },
-          });
-        } catch (error) {
-          console.error(`❌ Error updating reminder ${id}:`, error);
-          throw error;
+        // Handle deleted reminder
+        if (!existingReminder) {
+          console.log(
+            `⏭️ Reminder ${id} not found (likely deleted). Skipping execution...`
+          );
+          return null;
         }
+
+        // Update status
+        return await prisma.reminder.update({
+          where: { id },
+          data: { status: "COMPLETED" },
+        });
       });
 
       // Handle deleted reminder
@@ -106,7 +100,12 @@ export const reminderWorkflow = inngest.createFunction(
         timestamp: new Date().toISOString(),
       });
 
-      throw error;
+      // ❌ DON'T throw - return error instead
+      return { 
+        success: false, 
+        reminderId: id, 
+        error: error instanceof Error ? error.message : String(error) 
+      };
     }
   }
 );
