@@ -43,8 +43,13 @@ export const reminderWorkflow = inngest.createFunction(
       console.log(`✅ Reminder ${id} is due! Marking as COMPLETED...`);
 
       // ✅ Call API to mark as completed
+      // Use Vercel URL in production, localhost in development
+      const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}` 
+        : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      
       const response = await fetch(
-        `${process.env.APP_URL}/api/reminder/${id}`,
+        `${baseUrl}/api/reminder/${id}`,
         {
           method: "PUT",
           headers: {
